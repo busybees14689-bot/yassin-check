@@ -1,0 +1,725 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>YASSIN Work Hours Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: one centered column. Header card with progress, a five-card summary row, then the 30-day accordion and a report action bar. Single committed dark theme. */
+:root {
+  --bg: #08090b;
+  --bg-2: #0d0f12;
+  --surface: #111418;
+  --surface-2: #171b21;
+  --line: #242932;
+  --line-2: #323944;
+  --fg: #f5f6f8;
+  --muted: #9ba2ad;
+  --em: #34d399;
+  --em-strong: #10b981;
+  --em-ink: #03140d;
+  --em-soft: rgba(52, 211, 153, 0.12);
+  --em-line: rgba(52, 211, 153, 0.4);
+  --amber: #e5b567;
+  --amber-soft: rgba(229, 181, 103, 0.12);
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(900px 420px at 50% -120px, rgba(16, 185, 129, 0.13), transparent 70%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 480px);
+  background-color: var(--bg);
+  background-repeat: no-repeat;
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.wrap > * { min-width: 0; }
+
+button { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--em); outline-offset: 2px; }
+
+/* Header */
+.hero {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px 22px 22px;
+  background: linear-gradient(160deg, var(--surface-2), var(--surface) 55%);
+  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow: hidden;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -40px -90px auto;
+  width: 260px; height: 200px;
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.16), transparent);
+  pointer-events: none;
+}
+.hero-top { display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: flex-start; }
+.brand h1 { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: 0.22em; line-height: 1; }
+.brand p { margin: 10px 0 0; font-size: 12px; font-weight: 600; letter-spacing: 0.28em; color: var(--muted); }
+.period {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--em-line); background: var(--em-soft); color: var(--em);
+  border-radius: 999px; padding: 7px 14px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.period svg { width: 15px; height: 15px; }
+
+.progress-block { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; }
+.progress-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.progress-meta strong { font-size: 15px; font-weight: 600; }
+.progress-meta span { color: var(--muted); font-size: 13px; }
+.bar { height: 8px; background: #1b1f26; border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+.bar > i {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--em-strong), var(--em));
+  box-shadow: 0 0 14px rgba(52, 211, 153, 0.55);
+  border-radius: 99px;
+  transition: width 0.5s var(--ease);
+}
+.compact { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compact div { border: 1px solid var(--line); background: rgba(8, 9, 11, 0.5); border-radius: 14px; padding: 12px 14px; }
+.compact dt { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.compact dd { margin: 4px 0 0; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.compact dd small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+
+/* Summary */
+.section-title { margin: 0 0 12px; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.stat { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 14px 14px 13px; min-width: 0; }
+.stat:last-child { grid-column: 1 / -1; }
+.stat .k { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.stat .v { margin-top: 6px; font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.stat.accent .v { color: var(--em); }
+.stats-note { margin: 10px 2px 0; font-size: 12.5px; color: var(--muted); }
+
+/* Days */
+.days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.day {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 16px;
+  transition: border-color 0.25s, box-shadow 0.35s, background 0.25s;
+}
+.day:hover { border-color: var(--line-2); }
+.day.open { border-color: var(--em-line); background: linear-gradient(180deg, var(--surface-2), var(--surface)); box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.08), 0 18px 50px -26px rgba(16, 185, 129, 0.45); }
+.day-title { margin: 0; font-size: inherit; font-weight: inherit; }
+.day-head {
+  width: 100%; min-height: 62px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px;
+  background: none; border: 0; border-radius: 16px;
+  color: inherit; text-align: left; cursor: pointer;
+}
+.day-head:focus-visible { outline-offset: -2px; }
+.dot {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px dashed var(--line-2); display: grid; place-items: center; color: transparent;
+  transition: all 0.25s var(--ease);
+}
+.dot svg { width: 14px; height: 14px; }
+.day.recorded .dot { border: 1.5px solid var(--em); background: var(--em-soft); color: var(--em); box-shadow: 0 0 12px rgba(52, 211, 153, 0.25); }
+.day-num { font-weight: 600; font-size: 16px; flex: 1; min-width: 0; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; padding: 6px 12px;
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+  border: 1px dashed var(--line-2); color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.pill em { font-style: normal; font-weight: 500; font-size: 12px; opacity: 0.85; }
+.day.recorded .pill { border: 1px solid var(--em-line); background: var(--em-soft); color: var(--em); }
+.day.recorded.off .pill { border-color: rgba(229, 181, 103, 0.4); background: var(--amber-soft); color: var(--amber); }
+.chev { flex: none; width: 20px; height: 20px; color: var(--muted); transition: transform 0.35s var(--ease), color 0.2s; }
+.day.open .chev { transform: rotate(180deg); color: var(--em); }
+
+.panel {
+  display: grid; grid-template-rows: 0fr; visibility: hidden;
+  transition: grid-template-rows 0.38s var(--ease), visibility 0s linear 0.38s;
+}
+.day.open .panel { grid-template-rows: 1fr; visibility: visible; transition-delay: 0s; }
+.panel-clip { overflow: hidden; min-height: 0; }
+.panel-body { padding: 4px 16px 18px; display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); margin: 0 16px; padding-inline: 0; padding-top: 16px; }
+
+fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+legend { padding: 0; margin-bottom: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.chip { position: relative; display: block; }
+.chip.off { grid-column: 1 / -1; }
+.chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.chip span {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 50px; padding: 8px 10px;
+  border: 1px solid var(--line-2); border-radius: 12px;
+  background: var(--bg-2); color: var(--fg);
+  font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+  transition: all 0.2s var(--ease);
+}
+.chip:hover span { border-color: #4a5260; background: #12161b; }
+.chip input:checked + span { background: linear-gradient(180deg, rgba(52, 211, 153, 0.22), rgba(16, 185, 129, 0.1)); border-color: var(--em); color: #fff; box-shadow: 0 0 18px -2px rgba(52, 211, 153, 0.4); }
+.chip.off input:checked + span { background: var(--amber-soft); border-color: var(--amber); box-shadow: 0 0 18px -4px rgba(229, 181, 103, 0.4); }
+.chip input:focus-visible + span { outline: 2px solid var(--em); outline-offset: 2px; }
+
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 48px; padding: 0 20px; border-radius: 12px;
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--fg);
+  font-size: 14.5px; font-weight: 600; cursor: pointer; text-decoration: none;
+  transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.25s;
+}
+.btn:hover { border-color: #4a5260; background: #1c2127; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn-primary { background: linear-gradient(180deg, #3ee0a6, var(--em-strong)); border-color: transparent; color: var(--em-ink); box-shadow: 0 10px 30px -12px rgba(16, 185, 129, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.btn-primary:hover { background: linear-gradient(180deg, #5cf0bb, #14c78f); border-color: transparent; box-shadow: 0 12px 36px -10px rgba(16, 185, 129, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+.btn-ghost { background: transparent; }
+.btn-danger { border-color: rgba(240, 120, 120, 0.45); color: #ff9c9c; background: rgba(240, 90, 90, 0.08); }
+.btn-danger:hover { background: rgba(240, 90, 90, 0.16); border-color: rgba(240, 120, 120, 0.7); }
+
+/* Report bar */
+.finish {
+  border: 1px solid var(--line); border-radius: 20px; background: var(--surface);
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+}
+.finish .btn-primary { width: 100%; min-height: 56px; font-size: 16px; }
+.finish p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.finish .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.save-note { font-size: 12.5px; color: var(--muted); }
+.save-note.warn { color: var(--amber); }
+
+/* Dialog */
+.overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(3, 4, 5, 0.72); backdrop-filter: blur(6px); animation: fade 0.2s ease; }
+.overlay[hidden], .dialog-actions[hidden], .desc[hidden] { display: none !important; }
+.dialog {
+  width: 100%; max-width: 560px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px);
+  display: flex; flex-direction: column; gap: 14px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line-2); border-radius: 20px; padding: 22px;
+  box-shadow: 0 40px 90px -20px #000, 0 0 0 1px rgba(255, 255, 255, 0.03);
+  animation: rise 0.28s var(--ease);
+}
+.dialog h2 { margin: 0; font-size: 19px; font-weight: 700; }
+.dialog .desc { margin: 0; color: var(--muted); font-size: 14px; }
+.dialog-body { overflow: auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.dialog-actions .btn { flex: 1 1 150px; }
+.missing { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.missing button { min-height: 44px; min-width: 76px; padding: 0 14px; border-radius: 10px; border: 1px dashed var(--line-2); background: var(--bg-2); color: var(--fg); font-weight: 600; cursor: pointer; }
+.missing button:hover { border-color: var(--em); color: var(--em); }
+.mini { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0; }
+.mini div { border: 1px solid var(--line); background: var(--bg-2); border-radius: 12px; padding: 10px 12px; }
+.mini dt { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.mini dd { margin: 2px 0 0; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.report { margin: 0; padding: 14px; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #dfe3e8; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 300px; overflow: auto; }
+.status-line { margin: 0; min-height: 20px; font-size: 13px; color: var(--em); }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 80;
+  display: inline-flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 999px;
+  background: #0f1a16; border: 1px solid var(--em-line); color: var(--fg);
+  font-size: 14px; font-weight: 500; box-shadow: 0 16px 40px -12px #000, 0 0 24px -6px rgba(52, 211, 153, 0.5);
+  transition: opacity 0.25s, transform 0.3s var(--ease);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast svg { width: 16px; height: 16px; color: var(--em); flex: none; }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+
+@media (min-width: 640px) {
+  body { padding-block: 44px 72px; }
+  .hero { padding: 30px 30px 26px; }
+  .brand h1 { font-size: 48px; }
+  .compact dd { font-size: 24px; }
+  .stats { grid-template-columns: repeat(5, 1fr); }
+  .stat:last-child { grid-column: auto; }
+  .stat .v { font-size: 26px; }
+  .chips { grid-template-columns: repeat(5, 1fr); }
+  .chip.off { grid-column: auto; }
+  .chip span { font-size: 13.5px; }
+  .finish .btn-primary { width: auto; min-width: 300px; align-self: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; transition-delay: 0s !important; animation-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="wrap" id="app">
+  <header class="hero">
+    <div class="hero-top">
+      <div class="brand">
+        <h1>YASSIN</h1>
+        <p>WORK HOURS TRACKER</p>
+      </div>
+      <div class="period">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        30-Day Period
+      </div>
+    </div>
+    <div class="progress-block">
+      <div class="progress-meta">
+        <strong id="progress-text">0 of 30 days recorded</strong>
+        <span id="progress-sub">30 days left to record</span>
+      </div>
+      <div class="bar" role="progressbar" aria-label="Days recorded" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0" id="progress-bar"><i id="progress-fill"></i></div>
+    </div>
+    <dl class="compact">
+      <div><dt>Total hours</dt><dd id="c-total">0<small>h</small></dd></div>
+      <div><dt>Days without work</dt><dd id="c-off">0<small>days</small></dd></div>
+    </dl>
+  </header>
+
+  <section aria-labelledby="sum-title">
+    <h2 class="section-title" id="sum-title">Summary</h2>
+    <ul class="stats">
+      <li class="stat accent"><div class="k">Total Working Hours</div><div class="v" id="s-total">0<small>h</small></div></li>
+      <li class="stat"><div class="k">Days Worked</div><div class="v" id="s-worked">0<small>days</small></div></li>
+      <li class="stat"><div class="k">Days Without Work</div><div class="v" id="s-off">0<small>days</small></div></li>
+      <li class="stat"><div class="k">Average Daily Hours</div><div class="v" id="s-avg">0.00<small>h / day</small></div></li>
+      <li class="stat"><div class="k">Completion Progress</div><div class="v" id="s-done">0<small>/ 30 days</small></div></li>
+    </ul>
+    <p class="stats-note" id="stats-note">Totals count only days you have recorded. The average divides by all 30 days.</p>
+  </section>
+
+  <section aria-labelledby="days-title">
+    <h2 class="section-title" id="days-title">Daily Hours</h2>
+    <ol class="days" id="days"></ol>
+  </section>
+
+  <section class="finish" aria-label="Finish report">
+    <button type="button" class="btn btn-primary" id="complete-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      Complete 30-Day Report
+    </button>
+    <p id="finish-hint">Record all 30 days to build the report.</p>
+    <div class="row">
+      <span class="save-note" id="save-note">Entries save automatically on this device.</span>
+      <button type="button" class="btn btn-ghost" id="reset-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset report
+      </button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title" tabindex="-1">
+    <h2 id="dlg-title"></h2>
+    <p class="desc" id="dlg-desc"></p>
+    <div class="dialog-body" id="dlg-body"></div>
+    <div class="dialog-actions" id="dlg-actions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toast-text"></span>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Data model and pure logic (no DOM) ---------- */
+  var DAYS = 30;
+  var KEY = 'yassin-work-hours-v1';
+  var WORKER = 'Yassin';
+  var LOCAL_NUMBER = '01113403180';
+  var WA_NUMBER = '20' + LOCAL_NUMBER.replace(/^0/, ''); // Egypt +20, trunk 0 dropped
+  var HOURS = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+
+  function hoursLabel(h) { return h === 0 ? 'Did Not Work' : (h === 1 ? '1 hour' : h + ' hours'); }
+
+  var Logic = {
+    DAYS: DAYS, HOURS: HOURS, WA_NUMBER: WA_NUMBER, hoursLabel: hoursLabel,
+    blank: function () {
+      var a = [];
+      for (var i = 0; i < DAYS; i++) a.push({ hours: 9, reviewed: false });
+      return a;
+    },
+    sanitize: function (raw) {
+      var out = Logic.blank();
+      if (!raw || !Array.isArray(raw.days)) return out;
+      for (var i = 0; i < DAYS; i++) {
+        var d = raw.days[i];
+        if (d && Number.isInteger(d.hours) && d.hours >= 0 && d.hours <= 9) {
+          out[i] = { hours: d.hours, reviewed: d.reviewed === true };
+        }
+      }
+      return out;
+    },
+    stats: function (days) {
+      var total = 0, worked = 0, off = 0, recorded = 0;
+      days.forEach(function (d) {
+        if (!d.reviewed) return;
+        recorded++;
+        total += d.hours;
+        if (d.hours > 0) worked++; else off++;
+      });
+      return { total: total, worked: worked, off: off, recorded: recorded, pending: DAYS - recorded, average: total / DAYS };
+    },
+    missing: function (days) {
+      var m = [];
+      days.forEach(function (d, i) { if (!d.reviewed) m.push(i); });
+      return m;
+    },
+    report: function (days) {
+      var s = Logic.stats(days);
+      var L = [];
+      L.push('📋 *WORK HOURS REPORT*');
+      L.push('👷 Worker: ' + WORKER);
+      L.push('🗓️ Period: 30 days');
+      L.push('');
+      L.push('*Daily Hours*');
+      days.forEach(function (d, i) {
+        var line = 'Day ' + (i + 1) + ': ';
+        if (!d.reviewed) line += '⚪ Not recorded';
+        else if (d.hours === 0) line += '❌ Did Not Work (0 hours)';
+        else line += '✅ ' + hoursLabel(d.hours);
+        L.push(line);
+      });
+      L.push('');
+      L.push('*Summary*');
+      L.push('⏱️ Total working hours: ' + s.total);
+      L.push('✅ Total days worked: ' + s.worked);
+      L.push('❌ Total days without work: ' + s.off);
+      L.push('📊 Average daily working hours: ' + s.average.toFixed(2));
+      return L.join('\n');
+    },
+    waUrl: function (text) { return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text); }
+  };
+  window.YassinLogic = Logic;
+
+  /* ---------- State and storage ---------- */
+  var storageOk = true;
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      return Logic.sanitize(raw ? JSON.parse(raw) : null);
+    } catch (e) { storageOk = false; return Logic.blank(); }
+  }
+  function save() {
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify({ v: 1, days: days }));
+      storageOk = true;
+    } catch (e) { storageOk = false; }
+    renderSaveNote();
+  }
+
+  var days = load();
+  var openIndex = null;
+
+  /* ---------- DOM helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  var CHEVRON = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Day row component ---------- */
+  function buildRow(i) {
+    var n = i + 1;
+    var li = document.createElement('li');
+    li.className = 'day';
+    li.dataset.i = i;
+    var chips = HOURS.map(function (h) {
+      return '<label class="chip' + (h === 0 ? ' off' : '') + '"><input type="radio" name="hours-' + n + '" value="' + h + '"><span>' + hoursLabel(h) + '</span></label>';
+    }).join('');
+    li.innerHTML =
+      '<h3 class="day-title"><button type="button" class="day-head" id="head-' + n + '" aria-expanded="false" aria-controls="panel-' + n + '">' +
+        '<span class="dot">' + CHECK + '</span>' +
+        '<span class="day-num">Day ' + n + '</span>' +
+        '<span class="pill" data-role="pill"></span>' + CHEVRON +
+      '</button></h3>' +
+      '<div class="panel" id="panel-' + n + '" role="region" aria-labelledby="head-' + n + '"><div class="panel-clip"><div class="panel-body">' +
+        '<fieldset><legend>Working Hours</legend><div class="chips">' + chips + '</div></fieldset>' +
+        '<p class="hint" data-role="hint"></p>' +
+        '<div class="panel-actions"><button type="button" class="btn btn-primary" data-role="next"></button></div>' +
+      '</div></div></div>';
+    li.querySelector('.panel').inert = true;
+    return li;
+  }
+
+  function updateRow(i) {
+    var d = days[i], n = i + 1;
+    var li = $('days').children[i];
+    li.classList.toggle('recorded', d.reviewed);
+    li.classList.toggle('off', d.reviewed && d.hours === 0);
+    var radios = li.querySelectorAll('input[type=radio]');
+    for (var k = 0; k < radios.length; k++) radios[k].checked = Number(radios[k].value) === d.hours;
+    li.querySelector('[data-role=pill]').innerHTML = d.reviewed
+      ? hoursLabel(d.hours)
+      : hoursLabel(d.hours) + ' <em>· not recorded</em>';
+    li.querySelector('[data-role=hint]').textContent = d.reviewed
+      ? 'Recorded. You can change this at any time.'
+      : 'Not recorded yet. Choose a value, or confirm the default of 9 hours.';
+    var next = li.querySelector('[data-role=next]');
+    next.textContent = !d.reviewed
+      ? 'Confirm ' + hoursLabel(d.hours) + (n < DAYS ? ' and continue' : '')
+      : (n < DAYS ? 'Continue to Day ' + (n + 1) : 'Close');
+  }
+
+  function setOpen(i) {
+    openIndex = i;
+    Array.prototype.forEach.call($('days').children, function (li, k) {
+      var open = k === i;
+      li.classList.toggle('open', open);
+      li.querySelector('.day-head').setAttribute('aria-expanded', open ? 'true' : 'false');
+      li.querySelector('.panel').inert = !open;
+    });
+    if (i !== null) {
+      setTimeout(function () {
+        var li = $('days').children[i];
+        if (li) li.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+      }, 60);
+    }
+  }
+
+  function record(i, h) {
+    var d = days[i];
+    var changed = !d.reviewed || d.hours !== h;
+    d.hours = h;
+    d.reviewed = true;
+    if (changed) {
+      save();
+      updateRow(i);
+      renderStats();
+      toast('Day ' + (i + 1) + ' saved: ' + hoursLabel(h));
+    }
+  }
+
+  /* ---------- Summary ---------- */
+  function renderStats() {
+    var s = Logic.stats(days);
+    $('s-total').innerHTML = s.total + '<small>h</small>';
+    $('s-worked').innerHTML = s.worked + '<small>' + (s.worked === 1 ? 'day' : 'days') + '</small>';
+    $('s-off').innerHTML = s.off + '<small>' + (s.off === 1 ? 'day' : 'days') + '</small>';
+    $('s-avg').innerHTML = s.average.toFixed(2) + '<small>h / day</small>';
+    $('s-done').innerHTML = s.recorded + '<small>/ 30 days</small>';
+    $('c-total').innerHTML = s.total + '<small>h</small>';
+    $('c-off').innerHTML = s.off + '<small>' + (s.off === 1 ? 'day' : 'days') + '</small>';
+    $('progress-text').textContent = s.recorded + ' of 30 days recorded';
+    $('progress-sub').textContent = s.pending === 0 ? 'All days recorded' : s.pending + (s.pending === 1 ? ' day left to record' : ' days left to record');
+    $('progress-fill').style.width = (s.recorded / DAYS * 100) + '%';
+    $('progress-bar').setAttribute('aria-valuenow', String(s.recorded));
+    $('finish-hint').textContent = s.pending === 0
+      ? 'All 30 days are recorded. Review the report before sharing it on WhatsApp.'
+      : s.pending + (s.pending === 1 ? ' day still needs' : ' days still need') + ' to be recorded before the report can be shared.';
+  }
+
+  function renderSaveNote() {
+    var el = $('save-note');
+    el.classList.toggle('warn', !storageOk);
+    el.textContent = storageOk
+      ? 'Entries save automatically on this device.'
+      : 'This browser is blocking storage. Entries will be lost when the page closes.';
+  }
+
+  /* ---------- Toast ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    $('toast-text').textContent = msg;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { $('toast').classList.remove('show'); }, 2200);
+  }
+
+  /* ---------- Confirmation dialog component ---------- */
+  var lastFocus = null;
+  function el(tag, cls, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function openDialog(opts) {
+    lastFocus = document.activeElement;
+    $('dlg-title').textContent = opts.title;
+    $('dlg-desc').textContent = opts.desc || '';
+    $('dlg-desc').hidden = !opts.desc;
+    var body = $('dlg-body'), actions = $('dlg-actions');
+    body.innerHTML = ''; actions.innerHTML = '';
+    (opts.body || []).forEach(function (n) { body.appendChild(n); });
+    (opts.actions || []).forEach(function (n) { actions.appendChild(n); });
+    $('overlay').hidden = false;
+    $('app').inert = true;
+    var first = actions.querySelector('.btn-primary') || actions.querySelector('.btn, a') || $('dialog');
+    first.focus();
+  }
+  function closeDialog() {
+    if ($('overlay').hidden) return;
+    $('overlay').hidden = true;
+    $('app').inert = false;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function actionBtn(label, cls, onClick) {
+    var b = el('button', 'btn ' + cls);
+    b.type = 'button';
+    b.textContent = label;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if ($('overlay').hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeDialog(); return; }
+    if (e.key === 'Tab') {
+      var f = $('dialog').querySelectorAll('button, a[href], input, [tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === $('dialog'))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+  $('overlay').addEventListener('mousedown', function (e) { if (e.target === $('overlay')) closeDialog(); });
+
+  /* ---------- Flows ---------- */
+  function openIncomplete(missing) {
+    var list = el('ul', 'missing');
+    missing.forEach(function (i) {
+      var li = document.createElement('li');
+      var b = el('button', null, 'Day ' + (i + 1));
+      b.type = 'button';
+      b.addEventListener('click', function () { closeDialog(); setOpen(i); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+    openDialog({
+      title: missing.length + (missing.length === 1 ? ' day is not recorded yet' : ' days are not recorded yet'),
+      desc: 'These days have not been recorded. They are not counted as days without work. Choose a day to fill it in.',
+      body: [list],
+      actions: [
+        actionBtn('Close', 'btn-ghost', closeDialog),
+        actionBtn('Go to Day ' + (missing[0] + 1), 'btn-primary', function () { closeDialog(); setOpen(missing[0]); })
+      ]
+    });
+  }
+
+  function openReview() {
+    var s = Logic.stats(days);
+    var text = Logic.report(days);
+    var mini = el('dl', 'mini',
+      '<div><dt>Total hours</dt><dd>' + s.total + '</dd></div>' +
+      '<div><dt>Days worked</dt><dd>' + s.worked + '</dd></div>' +
+      '<div><dt>Days without work</dt><dd>' + s.off + '</dd></div>' +
+      '<div><dt>Average per day</dt><dd>' + s.average.toFixed(2) + '</dd></div>');
+    var pre = el('pre', 'report');
+    pre.textContent = text;
+    var status = el('p', 'status-line');
+    status.setAttribute('role', 'status');
+
+    var wa = el('a', 'btn btn-primary',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.7-5.4A8.4 8.4 0 1 1 21 11.5Z"/></svg>Open WhatsApp');
+    wa.href = Logic.waUrl(text);
+    wa.target = '_blank';
+    wa.rel = 'noopener noreferrer';
+    wa.addEventListener('click', function () {
+      status.textContent = 'WhatsApp should open in a new tab with the report ready. Press Send there to deliver it.';
+      toast('Report ready in WhatsApp. Press Send to deliver it.');
+    });
+
+    var copy = actionBtn('Copy report', 'btn-ghost', function () {
+      function fallback() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        status.textContent = 'Report selected. Copy it with your device copy command.';
+      }
+      try {
+        navigator.clipboard.writeText(text).then(function () { status.textContent = 'Report copied.'; }, fallback);
+      } catch (e) { fallback(); }
+    });
+
+    openDialog({
+      title: 'Review your 30-day report',
+      desc: 'This opens a WhatsApp chat with ' + LOCAL_NUMBER + ' and the message below already filled in. Nothing is sent until you press Send in WhatsApp.',
+      body: [mini, pre, status],
+      actions: [actionBtn('Back to edit', 'btn-ghost', closeDialog), copy, wa]
+    });
+  }
+
+  function openReset() {
+    openDialog({
+      title: 'Reset the whole report?',
+      desc: 'All 30 days return to the default of 9 hours and are marked as not recorded. This cannot be undone.',
+      actions: [
+        actionBtn('Keep my records', 'btn-ghost', closeDialog),
+        actionBtn('Reset everything', 'btn-danger', function () {
+          days = Logic.blank();
+          save();
+          for (var i = 0; i < DAYS; i++) updateRow(i);
+          renderStats();
+          setOpen(null);
+          closeDialog();
+          toast('Report reset');
+        })
+      ]
+    });
+  }
+
+  /* ---------- Wire up ---------- */
+  var list = $('days');
+  for (var i = 0; i < DAYS; i++) list.appendChild(buildRow(i));
+
+  list.addEventListener('click', function (e) {
+    var head = e.target.closest('.day-head');
+    if (head) {
+      var idx = Number(head.closest('.day').dataset.i);
+      setOpen(openIndex === idx ? null : idx);
+      return;
+    }
+    var radio = e.target.closest('input[type=radio]');
+    if (radio) {
+      record(Number(radio.closest('.day').dataset.i), Number(radio.value));
+      return;
+    }
+    var next = e.target.closest('[data-role=next]');
+    if (next) {
+      var k = Number(next.closest('.day').dataset.i);
+      if (!days[k].reviewed) record(k, days[k].hours);
+      setOpen(k < DAYS - 1 ? k + 1 : null);
+    }
+  });
+
+  $('complete-btn').addEventListener('click', function () {
+    var m = Logic.missing(days);
+    if (m.length) openIncomplete(m); else openReview();
+  });
+  $('reset-btn').addEventListener('click', openReset);
+
+  for (var j = 0; j < DAYS; j++) updateRow(j);
+  renderStats();
+  renderSaveNote();
+})();
+</script>
+
+</body></html>
